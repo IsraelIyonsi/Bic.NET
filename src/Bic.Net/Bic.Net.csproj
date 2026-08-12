@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RootNamespace>Bic</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>Bic.Net</PackageId>
+    <Version>0.1.0</Version>
+    <Title>Bic.NET</Title>
+    <Authors>Israel Iyonsi</Authors>
+    <Copyright>Copyright (c) 2026 Israel Iyonsi</Copyright>
+    <Description>Validate and parse SWIFT BIC (ISO 9362) business identifier codes. Structure, ISO 3166-1 country, location and branch parsing, test-BIC and primary-office detection. Zero external dependencies.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/IsraelIyonsi/Bic.NET</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/IsraelIyonsi/Bic.NET</PackageProjectUrl>
+    <PackageTags>bic;swift;iso9362;bank-identifier;iban;iso3166;payments;banking;fintech</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>See https://github.com/IsraelIyonsi/Bic.NET/blob/main/CHANGELOG.md</PackageReleaseNotes>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Bic.Net.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>
