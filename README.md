@@ -73,6 +73,28 @@ else
 `Parse` throws `BicFormatException` (a `FormatException`) with a message describing exactly which
 segment failed and why, useful for logs and for surfacing validation errors during development.
 
+## Allocation-free validation from a message buffer
+
+BICs usually arrive as a field inside a larger buffer, such as a SWIFT MT940 or MT103 message.
+Every `BicParser` entry point has a `ReadOnlySpan<char>` overload, so a BIC can be sliced straight
+out of that buffer and validated or parsed without first allocating a substring:
+
+```csharp
+using Bic;
+
+ReadOnlySpan<char> message = "...GENODEF1S02...";
+
+// Validate the 11-character BIC at offset 3 with no intermediate string.
+BicParser.IsValid(message.Slice(3, 11));          // true
+
+BicCode bic = BicParser.Parse(message.Slice(3, 11));
+// bic.Institution == "GENO", bic.Country == "DE", bic.Branch == "S02"
+```
+
+The `string` overloads simply forward to the span overloads, so behavior is identical for the same
+characters and null strings are handled exactly as before (`IsValid(null)` returns `false`,
+`Parse(null)` throws `BicFormatException`).
+
 ## API
 
 | Member | Purpose |
@@ -80,6 +102,9 @@ segment failed and why, useful for logs and for surfacing validation errors duri
 | `BicParser.IsValid(string?)` | Structural and country-code validity check; never throws |
 | `BicParser.Parse(string)` | Parses into a `BicCode`; throws `BicFormatException` on invalid input |
 | `BicParser.TryParse(string?, out BicCode?)` | Non-throwing parse |
+| `BicParser.IsValid(ReadOnlySpan<char>)` | Validity check over a span; validates a BIC sliced from a buffer without allocating a substring |
+| `BicParser.Parse(ReadOnlySpan<char>)` | Parses a span into a `BicCode`; throws `BicFormatException` on invalid input |
+| `BicParser.TryParse(ReadOnlySpan<char>, out BicCode?)` | Non-throwing parse over a span |
 | `BicCode.Institution` / `.Country` / `.Location` / `.Branch` | The four ISO 9362 segments, upper case |
 | `BicCode.IsTestBic` | `true` when the second location-code character is `0` |
 | `BicCode.IsPrimaryOffice` | `true` when the branch segment is empty or `XXX` |

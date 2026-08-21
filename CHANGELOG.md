@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-08-21
+
+### Added
+
+- `ReadOnlySpan<char>` overloads on `BicParser`: `IsValid(ReadOnlySpan<char>)`, `Parse(ReadOnlySpan<char>)`, and `TryParse(ReadOnlySpan<char>, out BicCode?)`. A BIC sliced out of a larger buffer (for example an MT940 or MT103 message field) can now be validated and parsed without allocating a substring. The existing `string` overloads delegate to these, so there is a single validation implementation and behavior is identical for the same characters, including null handling, Kosovo (`XK`) rejection, test-BIC (`0`) detection, and BIC8/BIC11 handling.
+
 ## [0.1.0] - 2026-08-12
 
 ### Added

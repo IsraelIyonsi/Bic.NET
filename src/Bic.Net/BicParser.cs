@@ -18,7 +18,17 @@ public static class BicParser
     /// </summary>
     /// <param name="value">The candidate BIC.</param>
     /// <returns><see langword="true"/> when <paramref name="value"/> is a valid BIC; otherwise <see langword="false"/>.</returns>
-    public static bool IsValid([NotNullWhen(true)] string? value) => TryParse(value, out _);
+    public static bool IsValid([NotNullWhen(true)] string? value) => value is not null && IsValid(value.AsSpan());
+
+    /// <summary>
+    /// Determines whether <paramref name="value"/> is a structurally valid BIC, reading directly
+    /// from a character span so a BIC sliced out of a larger buffer (for example an MT940 or MT103
+    /// message field) can be validated without allocating a substring. Behaves identically to
+    /// <see cref="IsValid(string?)"/> for the same characters.
+    /// </summary>
+    /// <param name="value">The candidate BIC.</param>
+    /// <returns><see langword="true"/> when <paramref name="value"/> is a valid BIC; otherwise <see langword="false"/>.</returns>
+    public static bool IsValid(ReadOnlySpan<char> value) => TryParseCore(value, out _) == BicValidationFailure.None;
 
     /// <summary>
     /// Parses <paramref name="value"/> into a <see cref="BicCode"/>.
@@ -31,7 +41,23 @@ public static class BicParser
     /// contains a character outside the allowed class for its segment, or its country segment is
     /// not a recognized ISO 3166-1 alpha-2 code.
     /// </exception>
-    public static BicCode Parse(string value)
+    public static BicCode Parse(string value) => Parse(value.AsSpan());
+
+    /// <summary>
+    /// Parses <paramref name="value"/> into a <see cref="BicCode"/>, reading directly from a
+    /// character span so a BIC sliced out of a larger buffer can be parsed without allocating a
+    /// substring. Behaves identically to <see cref="Parse(string)"/> for the same characters,
+    /// throwing the same exception type on invalid input.
+    /// </summary>
+    /// <param name="value">The BIC to parse.</param>
+    /// <returns>The parsed, normalized <see cref="BicCode"/>.</returns>
+    /// <exception cref="BicFormatException">
+    /// <paramref name="value"/> is not a structurally valid BIC: it is empty, of a length
+    /// other than <see cref="BicFormat.HeadOfficeLength"/> or <see cref="BicFormat.BranchLength"/>,
+    /// contains a character outside the allowed class for its segment, or its country segment is
+    /// not a recognized ISO 3166-1 alpha-2 code.
+    /// </exception>
+    public static BicCode Parse(ReadOnlySpan<char> value)
     {
         var failure = TryParseCore(value, out var result);
         if (failure != BicValidationFailure.None)
@@ -54,15 +80,37 @@ public static class BicParser
     /// <returns><see langword="true"/> when <paramref name="value"/> is a valid BIC; otherwise <see langword="false"/>.</returns>
     public static bool TryParse([NotNullWhen(true)] string? value, out BicCode? result)
     {
+        if (value is null)
+        {
+            result = null;
+            return false;
+        }
+
+        return TryParse(value.AsSpan(), out result);
+    }
+
+    /// <summary>
+    /// Attempts to parse <paramref name="value"/> into a <see cref="BicCode"/>, reading directly
+    /// from a character span so a BIC sliced out of a larger buffer can be parsed without
+    /// allocating a substring, and without throwing when it is not a valid BIC.
+    /// </summary>
+    /// <param name="value">The candidate BIC.</param>
+    /// <param name="result">
+    /// When this method returns <see langword="true"/>, the parsed, normalized
+    /// <see cref="BicCode"/>; otherwise <see langword="null"/>.
+    /// </param>
+    /// <returns><see langword="true"/> when <paramref name="value"/> is a valid BIC; otherwise <see langword="false"/>.</returns>
+    public static bool TryParse(ReadOnlySpan<char> value, out BicCode? result)
+    {
         var failure = TryParseCore(value, out result);
         return failure == BicValidationFailure.None;
     }
 
-    private static BicValidationFailure TryParseCore(string? value, out BicCode? result)
+    private static BicValidationFailure TryParseCore(ReadOnlySpan<char> value, out BicCode? result)
     {
         result = null;
 
-        if (string.IsNullOrEmpty(value))
+        if (value.IsEmpty)
         {
             return BicValidationFailure.NullOrEmpty;
         }
@@ -151,12 +199,12 @@ public static class BicParser
         return true;
     }
 
-    private static string DescribeFailure(string? value, BicValidationFailure failure) => failure switch
+    private static string DescribeFailure(ReadOnlySpan<char> value, BicValidationFailure failure) => failure switch
     {
         BicValidationFailure.NullOrEmpty =>
             "BIC must not be null or empty.",
         BicValidationFailure.InvalidLength =>
-            $"BIC must be {BicFormat.HeadOfficeLength} or {BicFormat.BranchLength} characters long, but \"{value}\" is {value!.Length} characters long.",
+            $"BIC must be {BicFormat.HeadOfficeLength} or {BicFormat.BranchLength} characters long, but \"{value}\" is {value.Length} characters long.",
         BicValidationFailure.InvalidInstitutionCode =>
             $"The first {BicFormat.InstitutionCodeLength} characters of a BIC (the institution code) must be letters, but \"{value}\" has a non-letter there.",
         BicValidationFailure.InvalidCountryCode =>
